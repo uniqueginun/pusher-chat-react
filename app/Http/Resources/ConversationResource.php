@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ConversationResource extends JsonResource
@@ -18,8 +17,9 @@ class ConversationResource extends JsonResource
         return [
             'id' => $this->id,
             'body' => $this->body,
+            'user_id' => $this->user_id,
             'created_at' => $this->created_at->diffForHumans(),
-            'from_me' => $this->user_id === Auth::id()
+            'from_me' => (int) $this->user_id === (int) auth()->id()
         ];
     }
 }
