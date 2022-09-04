@@ -6,28 +6,25 @@ use App\Models\Chat;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\ConversationResource;
 
 class ChatController extends Controller
 {
     public function compose(Request $request)
     {
-        Chat::create([
+        $chat = Chat::create([
             'body' => $request->body,
             'user_id' => Auth::id(),
             'receiver_id' => $request->receiver
         ]);
 
-        return to_route('dashboard');
+        return response(new ConversationResource($chat));
     }
 
     public function loadMessages(User $user)
     {
-        $messages = Chat::where(function ($query) use ($user) {
-            $query->where('user_id', $user->id)->where('receiver_id', Auth::id())->orWhere(function ($query) use ($user) {
-                $query->where('user_id', Auth::id())->where('receiver_id', $user->id);
-            });
-        })->get();
+        $messages = Chat::query()->conversationWith($user)->get();
 
-        return response()->json($messages);
+        return response()->json(ConversationResource::collection($messages));
     }
 }

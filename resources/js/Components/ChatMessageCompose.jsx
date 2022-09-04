@@ -1,13 +1,16 @@
 import React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function ChatMessageCompose({ send, sending }) {
 
     const [message, setMessage] = useState('')
 
+    useEffect(() => {
+        if (! sending) setMessage('')
+    }, [sending])
+
     const emitSend = e => {
         e.preventDefault();
-
         send(message)
     }
 

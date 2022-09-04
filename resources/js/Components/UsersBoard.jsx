@@ -2,7 +2,7 @@ import React from 'react'
 
 function UsersBoard({ participants, selectUser }) {
 
-    const handleUserSelection = ({ target }) => selectUser(target.value)
+    const handleUserSelection = ({ target }) => selectUser(participants.find(user => user.id == target.value))
 
     return (
         <div className="flex justify-center">

@@ -1,4 +1,5 @@
 import { Inertia } from '@inertiajs/inertia'
+import axios from 'axios'
 import React, { useState, useEffect } from 'react'
 import ChatMessageCompose from './ChatMessageCompose'
 import ChatMessages from './ChatMessages'
@@ -13,40 +14,46 @@ function ChatBox({ user, participants }) {
 
     const [currentUser, setCurrentUser] = useState(null)
 
+    const [conversation, setConversation] = useState([])
+
     const loadChatWith = () => {
         if (currentUser === null) return
-        Inertia.get(route('chat.load', currentUser), {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: ({ props }) => console.log(props),
-            onBefore: () => setLoadingChat(true),
-            onFinish: () => setLoadingChat(false)
-        })
+
+        setLoadingChat(true)
+
+        axios.get(route('chat.load', currentUser.id))
+            .then(({ data }) => setConversation(data))
+            .finally(() => setLoadingChat(false))
     }
 
     useEffect(() => loadChatWith(), [currentUser])
 
     const sendMessage = messageText => {
-        const data = {
-            body: messageText,
-            receiver: 1
-        }
+        if (currentUser === null) return
 
-        Inertia.post(route('compose'), data, {
-            preserveState: true,
-            preserveScroll: true,
-            onBefore: () => setSending(true),
-            onFinish: () => setSending(false)
+        setSending(true)
+
+        axios.post(route('compose'), {
+            body: messageText,
+            receiver: currentUser.id
+        })
+        .then(({ data }) => {
+            setConversation([...conversation, data])
+        })
+        .finally(() => {
+            setSending(false)
         })
     }
 
     return (
         <div className="flex-1 p:2 sm:p-6 justify-between flex flex-col py-6">
-            <ChatUserCard user={user} participants={participants} selectUser={userId => setCurrentUser(userId || null)} />
+            <ChatUserCard user={user} participants={participants} selectUser={user => setCurrentUser(user || null)} />
 
-            {! currentUser ? <div className="py-6 font-bold text-red-400">Please select a user to chat with!</div> : (
+            {! currentUser ? 
+                <div className="py-6 text-red-500 text-lg font-bold">Please select a user to chat with!</div> 
+                    : loadingChat ? <div className="mt-5 text-lg text-indigo-500 text-center font-bold">loading chats with {currentUser?.name}...</div> : (
                 <>
-                    <ChatMessages />
+                    <ChatMessages conversation={conversation} />
                     <ChatMessageCompose send={sendMessage} sending={sending} />
                 </>
             )}
